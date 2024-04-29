@@ -3,6 +3,10 @@ from tkinter import ttk
 from tkinter import messagebox
 import datetime
 from datetime import datetime
+import sqlite3
+from payment_data import *
+
+balance_value = 5000
 
 def new_window(tab_name):
     frame = ttk.Frame(root)
@@ -11,8 +15,8 @@ def new_window(tab_name):
         payment_name = ttk.Label(frame, text="Name")
         payment_name.pack()
 
-        payment_input = ttk.Entry(frame)
-        payment_input.pack()
+        payment_name_input = ttk.Entry(frame)
+        payment_name_input.pack()
 
         payment_iban = ttk.Label(frame, text="IBAN/Account Number")
         payment_iban.pack()
@@ -43,15 +47,42 @@ def new_window(tab_name):
 
         message_for_recepient = ttk.Label(frame, text="Message for the recepient")
         message_for_recepient.pack()
-        message_for_recepient_input = ttk.Entry(frame)
-        message_for_recepient_input.pack()
+        message_for_recipient_input = ttk.Entry(frame)
+        message_for_recipient_input.pack()
 
         sender_refference = ttk.Label(frame, text="Sender refference")
         sender_refference.pack()
-        sender_refference_input = ttk.Entry(frame)
-        sender_refference_input.pack()
+        sender_reference_input = ttk.Entry(frame)
+        sender_reference_input.pack()
 
-        sign_transfer_button = ttk.Button(frame, text="Sign and transfer")
+        def sign_and_transfer():
+            global balance_value
+            try:
+                amount = float(payment_amount_input.get())
+                if amount <= balance_value:
+                    payment_data = (
+                        payment_name_input.get(),
+                        payment_iban_input.get(),
+                        amount,
+                        variable_symbol_input.get(),
+                        constant_symbol_input.get(),
+                        specific_symbol_input.get(),
+                        message_for_recipient_input.get(),
+                        sender_reference_input.get(),
+                        datetime.now()
+                    )
+                        
+                    insert_payment(payment_data)
+
+                    balance_value -= amount
+                    balance_display.config(text=f"Your Balance: {balance_value}€")
+                    messagebox.showinfo("Success", "Payment signed and transferred!")
+                else:
+                    messagebox.showinfo("Not enough balance")
+                    return
+            except ValueError:
+                messagebox.showinfo("Invalid Amount")
+        sign_transfer_button = ttk.Button(frame, text="Sign and transfer", command=sign_and_transfer)
         sign_transfer_button.pack()
     elif tab_name == "Settings":
         details_label = ttk.Label(frame, text="Product details")
@@ -75,15 +106,31 @@ def new_window(tab_name):
         statement_label.pack()
         add_statement_button = ttk.Button(frame, text="New statement rule")
         add_statement_button.pack()
-        #make and add the statements through SQL
     elif tab_name == "History":
-        current_month = datetime.now().strftime("%B %Y")
-        current_month_label = ttk.Label(frame, text=f"{current_month}")
-        current_month_label.pack()
-        month_payments_frame = ttk.Frame(frame)
-        month_payments_frame.pack()
-        current_month_payments = ttk.Label(month_payments_frame, text="None yet") #extract payment data through SQL and probably a nested function
-        current_month_payments.pack()
+        tree = ttk.Treeview(frame)
+
+        tree["column"] = ("id",
+                        "name",
+                        "iban",
+                        "amount",
+                        "variable_symbol",
+                        "constant_symbol",
+                        "specific_symbol",
+                        "message_for_recipient",
+                        "sender_reference",
+                        "timestamp")
+        for col in tree["column"]:
+            tree.heading(col, text=col.capitalize())
+            tree.column(col, width=100)
+
+        db_cursor.execute("SELECT * FROM payments")
+        rows = db_cursor.fetchall()
+
+        for row in rows:
+            tree.insert("", "end", values=row)
+        
+        tree.pack(expand=True, fill="both")
+
 root = tk.Tk()
 
 window_width = 1920
@@ -95,7 +142,6 @@ root.title("BanKing")
 
 notebook = ttk.Notebook(root)
 
-balance_value = 1000
 balance_display = ttk.Label(root, text=f" Your Balance: {balance_value}€")
 balance_display.pack()
 
