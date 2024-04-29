@@ -59,7 +59,10 @@ def new_window(tab_name):
             global balance_value
             try:
                 amount = float(payment_amount_input.get())
-                if amount <= balance_value:
+                if amount > balance_value:
+                    messagebox.showerror("", "Not enough balance")
+                    return
+                else:
                     payment_data = (
                         payment_name_input.get(),
                         payment_iban_input.get(),
@@ -75,19 +78,16 @@ def new_window(tab_name):
                     insert_payment(payment_data)
 
                     balance_value -= amount
-                    balance_display.config(text=f"Your Balance: {balance_value}€")
-                    messagebox.showinfo("Success", "Payment signed and transferred!")
-                else:
-                    messagebox.showinfo("Not enough balance")
-                    return
+                    balance_display.config(text=f"Current Balance: {balance_value}€")
+                    messagebox.showinfo("", "Payment signed and funds have been successfuly transferred")
             except ValueError:
                 messagebox.showinfo("Invalid Amount")
         sign_transfer_button = ttk.Button(frame, text="Sign and transfer", command=sign_and_transfer)
         sign_transfer_button.pack()
-    elif tab_name == "Settings":
+    elif tab_name == "Settings":         #TURN THIS INTO A CLASS
         details_label = ttk.Label(frame, text="Product details")
         details_label.pack()
-        current_balance_detail = ttk.Label(frame, text=f"Current Balance: {balance_value}")
+        current_balance_detail = ttk.Label(frame, text=f"Current Balance: {balance_value}€")
         current_balance_detail.pack()
         your_iban_value = "SK73 0100 0000 0015 6153 4661"
         your_iban = ttk.Label(frame, text=f"IBAN: {your_iban_value}")
@@ -104,8 +104,10 @@ def new_window(tab_name):
     elif tab_name == "Account Statements":
         statement_label = ttk.Label(frame, text="Statements")
         statement_label.pack()
-        add_statement_button = ttk.Button(frame, text="New statement rule")
-        add_statement_button.pack()
+        def generate_statement():  #make a function to create and display the statements
+            pass
+        latest_statement = ttk.Button(frame, text="Statement", command=generate_statement)
+        latest_statement.pack()
     elif tab_name == "History":
         tree = ttk.Treeview(frame)
 
@@ -142,9 +144,8 @@ root.title("BanKing")
 
 notebook = ttk.Notebook(root)
 
-balance_display = ttk.Label(root, text=f" Your Balance: {balance_value}€")
+balance_display = ttk.Label(root, text=f"Current Balance: {balance_value}€")
 balance_display.pack()
-
 
 history_button = ttk.Button(root, text="History", command=lambda: new_window("History"))
 history_button.pack(side="top")
@@ -152,13 +153,8 @@ history_button.pack(side="top")
 new_payment_button = ttk.Button(root, text="New Payment", command=lambda: new_window("New Payment"))
 new_payment_button.pack(side="top")
 
-
 account_statements_button = ttk.Button(root, text="Account Statements", command=lambda: new_window("Account Statements"))
 account_statements_button.pack(side="top")
-
-standing_orders_button = ttk.Button(root, text="Standing Orders", command=lambda: new_window("Standing Orders"))
-standing_orders_button.pack(side="top")
-
 
 settings_button = ttk.Button(root, text="Settings", command=lambda: new_window("Settings"))
 settings_button.pack(side="top")
