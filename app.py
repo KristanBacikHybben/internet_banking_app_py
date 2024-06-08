@@ -31,6 +31,94 @@ class SettingsTab:
         monthly_fee_label.pack()
 
 balance_value = 5000
+window_width = 1080
+window_height = 720
+
+root = tk.Tk()
+
+def login_screen():
+    login_window = tk.Toplevel(root)
+    login_window.geometry(f"{window_width}x{window_height}")
+    login_window.title("Login")
+
+    username_label = ttk.Label(login_window, text="Username")
+    username_label.pack()
+
+    username_entry = ttk.Entry(login_window)
+    username_entry.pack()
+
+    password_label = ttk.Label(login_window, text="Password")
+    password_label.pack()
+
+    password_entry = ttk.Entry(login_window)
+    password_entry.pack()
+
+    def handle_login():
+        user = login_user(username_entry.get(), password_entry.get())
+        if user:
+            global current_user
+            current_user = user
+            messagebox.showinfo("SUCCESS", "Logged in")
+            login_window.destroy()
+
+            login_menu_button.destroy()
+            register_button.destroy()
+
+            history_button.pack()
+            new_payment_button.pack()
+            account_statements_button.pack()
+            settings_button.pack()
+
+        else:
+            messagebox.showerror("ERROR", "Wrong username or password")
+
+    ttk.Button(login_window, text="Login", command=handle_login).pack()
+
+def register_screen():
+    register_window = tk.Toplevel(root)
+    register_window.geometry(f"{window_width}x{window_height}")
+    register_window.title("Register")
+
+    username_label = ttk.Label(register_window, text="Username")
+    username_label.pack()
+
+    username_entry = ttk.Entry(register_window)
+    username_entry.pack()
+
+    password_label = ttk.Label(register_window, text="Password")
+    password_label.pack()
+
+    password_entry = ttk.Entry(register_window, show="*")
+    password_entry.pack()
+
+    def handle_register():
+        registered = register_user(username_entry.get(), password_entry.get())
+        if registered:
+            messagebox.showinfo("SUCCESS", "Registration successful")
+            register_window.destroy()
+        else:
+            messagebox.showerror("ERROR", "Username is already taken")
+
+        ttk.Button(register_window, text="Register", command=handle_register).pack()
+
+login_menu_button = ttk.Button(root, text="Login", command=login_screen)
+login_menu_button.pack(side="top")
+
+register_button = ttk.Button(root, text="Register", command=register_screen)
+register_button.pack(side="top")
+
+def register_user(username, password):
+    try:
+        db_cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        db_conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    
+def login_user(username, password):
+    db_cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+    user = db_cursor.fetchone()
+    return user
 
 def new_window(tab_name):
     frame = ttk.Frame(root)
@@ -123,6 +211,7 @@ def new_window(tab_name):
                     return
                 else:
                     payment_data = (
+                        current_user[0],
                         payment_name_input.get(),
                         payment_iban_input.get(),
                         amount,
@@ -144,7 +233,6 @@ def new_window(tab_name):
         sign_transfer_button = ttk.Button(frame, text="Sign and transfer", command=sign_and_transfer)
         sign_transfer_button.pack()
     elif tab_name == "Settings":         
-            
             settings_tab.create()
     elif tab_name == "Account Statements":
         def generate_statement():
@@ -173,17 +261,11 @@ def new_window(tab_name):
             
             filling_the_history_table(history_table, db_cursor)
             history_table.pack(expand=True, fill="both")
-            
-        latest_statement = ttk.Button(frame, text="Statement", command=generate_statement)
+        latest_statement = ttk.Button(frame, text="Latest statement", command=generate_statement)
         latest_statement.pack()
     elif tab_name == "History":
         filling_the_history_table(history_table, db_cursor)
         history_table.pack(expand=True, fill="both")
-
-root = tk.Tk()
-
-window_width = 1920
-window_height = 1080
 
 root.geometry(f"{window_width}x{window_height}")
 
@@ -192,20 +274,11 @@ root.title("BanKing")
 notebook = ttk.Notebook(root)
 
 balance_display = ttk.Label(root, text=f"Current Balance: {balance_value}€")
-balance_display.pack()
-
 history_button = ttk.Button(root, text="History", command=lambda: new_window("History"))
-history_button.pack(side="top")
-
 new_payment_button = ttk.Button(root, text="New Payment", command=lambda: new_window("New Payment"))
-new_payment_button.pack(side="top")
-
 account_statements_button = ttk.Button(root, text="Account Statements", command=lambda: new_window("Account Statements"))
-account_statements_button.pack(side="top")
-
 settings_button = ttk.Button(root, text="Settings", command=lambda: new_window("Settings"))
-settings_button.pack(side="top")
-
 notebook.pack(expand=True, fill="both")
+
 
 root.mainloop()
