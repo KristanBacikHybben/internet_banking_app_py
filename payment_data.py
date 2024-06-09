@@ -19,19 +19,26 @@ CREATE TABLE IF NOT EXISTS payments (
 """)
 db_conn.commit()
 
+
 db_cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
     username TEXT UNIQUE,
-    password TEXT)
+    password TEXT,
+    balance REAL DEFAULT 5000,
+    iban TEXT UNIQUE,
+    account_number TEXT UNIQUE,
+    bic_swift TEXT,
+    monthly_fee REAL DEFAULT 3
+                  )
 """)
 db_conn.commit()
 
-def insert_payment(user_id, data):
+def insert_payment(data):
     db_cursor.execute("""
     INSERT INTO payments (
         user_id, name, iban, amount, variable_symbol, constant_symbol, specific_symbol, 
         message_for_recipient, sender_reference, timestamp
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (user_id, *data))
+    """, (data))
     db_conn.commit()
